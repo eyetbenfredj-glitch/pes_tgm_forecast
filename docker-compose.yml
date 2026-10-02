@@ -1,0 +1,13 @@
+# One command demo:  docker compose up --build
+#   API       -> http://localhost:8000/docs
+#   Dashboard -> http://localhost:8501
+services:
+  api:
+    build: .
+    ports: ["8000:8000"]
+    environment: [DATA_MODE=demo]
+  dashboard:
+    build: .
+    command: streamlit run src/dashboard/app.py --server.port 8501 --server.address 0.0.0.0
+    ports: ["8501:8501"]
+    environment: [DATA_MODE=demo]

@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.pyc
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Data files (large; use DVC or similar)
+data/processed/training_dataset_15min.csv
+data/processed/weather_historical.csv
+data/processed/pv_production_reference_15min.csv
+data/processed/training_dataset_15min_real_reference.csv
+data/processed/training_dataset_15min_real_reference_sample.csv
+data/processed/pv_production_reference_15min_sample.csv
+data/validation/enstab_borj_cedria_real.csv
+
+# Model artifacts (large)
+models/registry/*/lightgbm_model.joblib
+models/registry/*/residual_corrector.joblib
+
+# IDE/OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Logs
+*.log

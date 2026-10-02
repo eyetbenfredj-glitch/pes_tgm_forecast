@@ -1,0 +1,41 @@
+{
+  "horizons": [
+    "15min",
+    "1h",
+    "3h",
+    "6h",
+    "J+1",
+    "J+2",
+    "J+3"
+  ],
+  "features": [
+    "pk",
+    "pk_ffill",
+    "age_h",
+    "pk_m4",
+    "pk_m12",
+    "pk_sd4",
+    "pk_d4",
+    "kt_meas",
+    "kt_meas_m4",
+    "pk_day1",
+    "pk_day3",
+    "pk_day7",
+    "pk_day30",
+    "pk_lag_same",
+    "t_amb",
+    "rh",
+    "wind",
+    "pres",
+    "dpres3h",
+    "ghi_cs",
+    "elev",
+    "azim",
+    "hsin",
+    "hcos",
+    "dsin",
+    "dcos",
+    "lead_h"
+  ],
+  "c_pcs": 3.5548773132050613
+}

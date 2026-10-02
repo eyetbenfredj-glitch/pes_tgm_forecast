@@ -1,0 +1,28 @@
+% Auto-generated. Paste into the LaTeX report.
+\begin{tabular}{lrrrrr}
+\toprule
+ & MAE_W & RMSE_W & nMAE_pct & bias_W & skill_vs_persistence_pct \\
+\midrule
+Persistence & 338.10 & 528.34 & 11.27 & -7.37 & 0.00 \\
+Smart persistence (clear-sky index) & 376.34 & 496.45 & 12.54 & -84.38 & -11.31 \\
+LightGBM & 269.46 & 379.19 & 8.98 & 8.51 & 20.30 \\
+XGBoost & 266.26 & 377.26 & 8.88 & 1.30 & 21.25 \\
+Clear-sky physics (no cloud info) [same-time diagnostic, not a forecast] & 828.99 & 1024.87 & 27.63 & 816.69 & NaN \\
+Calibrated physics (ENSTAB-fit) + measured GHI & Tcell [same-time diagnostic, not a forecast] & 126.41 & 187.62 & 4.21 & 9.12 & NaN \\
+\bottomrule
+\end{tabular}
+
+\begin{tabular}{lrrrrrr}
+\toprule
+ & MAE_W & RMSE_W & nMAE_pct & nMAE24_pct & P10-P90 coverage (%) & raw coverage (%) \\
+horizon &  &  &  &  &  &  \\
+\midrule
+15min & 100.92 & 176.73 & 3.36 & 1.56 & 78.60 & 74.80 \\
+1h & 177.22 & 274.11 & 5.91 & 2.74 & 81.30 & 72.30 \\
+3h & 231.64 & 331.93 & 7.72 & 3.58 & 82.40 & 75.00 \\
+6h & 253.51 & 361.68 & 8.45 & 3.92 & 79.30 & 68.60 \\
+J+1 & 269.46 & 379.19 & 8.98 & 4.17 & 80.00 & 70.20 \\
+J+2 & 294.42 & 404.47 & 9.81 & 4.55 & 82.00 & 70.70 \\
+J+3 & 297.48 & 406.14 & 9.92 & 4.60 & 85.40 & 76.30 \\
+\bottomrule
+\end{tabular}

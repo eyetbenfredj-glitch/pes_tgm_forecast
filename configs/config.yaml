@@ -1,0 +1,55 @@
+# =============================================================================
+# PESTGM 7.0 - Track 1 - National PV Forecasting Platform
+# Global configuration
+# =============================================================================
+
+project:
+  name: "pestgm-pv-forecast"
+  track: "Track 1 - National Intelligent Platform for Forecasting Rooftop Solar Production"
+  country: "Tunisia"
+  timezone: "Africa/Tunis"
+
+paths:
+  raw_fleet_csv: "data/raw/pv_fleet_prosol_3_snapshots.csv"
+  processed_dir: "data/processed"
+  synthetic_dir: "data/synthetic"
+  external_dir: "data/external"
+  validation_dir: "data/validation"
+
+fleet:
+  snapshots:
+    - "2025-12-01"
+    - "2026-03-01"
+    - "2026-07-01"
+  interpolation_method: "linear"     # transparent, documented strategy (see CDC section 3)
+  extrapolate_before_first: "hold_first"   # keep Dec-2025 value before that date
+  extrapolate_after_last: "hold_last"      # keep Jul-2026 value after that date
+
+weather:
+  provider: "open_meteo"             # abstraction target - see src/ingestion/weather_provider.py
+  mode_fallback: "synthetic_clearsky" # used only when real API is unreachable (documented limitation)
+  historical_start: "2022-01-01"
+  variables:
+    - temperature_2m
+    - relative_humidity_2m
+    - cloud_cover
+    - shortwave_radiation
+    - direct_radiation
+    - diffuse_radiation
+    - direct_normal_irradiance
+    - wind_speed_10m
+    - precipitation
+
+production_target:
+  mode: "DEMO_PROXY"                 # DEMO_PROXY | REAL_CSV  (see CDC section 35/36)
+  resolution_minutes: 15
+  performance_ratio_mean: 0.80       # system performance factor (soiling, inverter, wiring losses, etc.)
+  performance_ratio_std: 0.03
+  noise_std_fraction: 0.04           # stochastic demo noise as fraction of instantaneous capacity output
+  temperature_coefficient_pct_per_c: -0.40   # %/°C above 25°C (typical crystalline-silicon module)
+  nominal_operating_cell_temp_c: 45.0
+
+spatial_levels: ["district", "governorate", "national"]
+temporal_horizons: ["intraday_15min", "day_ahead", "j2", "j3"]
+
+random_seed: 42

@@ -1,0 +1,13 @@
+{
+  "version": "20260922T114509Z",
+  "trigger": "cli",
+  "data_mode": "demo",
+  "trained_on": "DEMO_PROXY_PHYSICS_SIMULATION",
+  "training_time_val_MAE_MW": 0.20824026484387362,
+  "new_batch_MAE_MW_before_correction": 0.20555052216165748,
+  "new_batch_MAE_MW_after_correction": 0.20853041144730725,
+  "uncertainty_empirical_coverage_pct": 87.57870894677237,
+  "retrain_decision": "NO_RETRAIN_NEEDED",
+  "retrained_model_val_MAE_MW": null,
+  "generated_at": "2026-09-22T11:45:09.204250+00:00"
+}

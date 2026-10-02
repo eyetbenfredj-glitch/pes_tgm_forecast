@@ -1,0 +1,42 @@
+{
+  "c_pcs": 3.5548773132050613,
+  "physics_calibration": {
+    "A_w_per_wm2": 2.7920268313882133,
+    "gamma_per_c": -0.002974275608040208,
+    "pnom_w": 3000.0,
+    "A_norm": 0.0009306756104627377,
+    "note": "Fitted on ENSTAB TRAIN split only (measured GHI + measured cell temperature)."
+  },
+  "pnom_w": 3000.0,
+  "site": {
+    "lat": 36.72,
+    "lon": 10.43,
+    "alt": 30.0,
+    "tz": "Africa/Tunis"
+  },
+  "lgbm_presets": {
+    "15min": "A_default",
+    "1h": "A_default",
+    "3h": "B_regularised",
+    "6h": "A_default",
+    "J+1": "B_regularised",
+    "J+2": "B_regularised",
+    "J+3": "C_strong"
+  },
+  "splits": {
+    "train": [
+      "2022-03-01",
+      "2023-05-31"
+    ],
+    "val": [
+      "2023-06-01",
+      "2023-11-30"
+    ],
+    "test": [
+      "2023-12-01",
+      "2024-05-31"
+    ]
+  },
+  "issue_hour_local": 10,
+  "data_class": "MEASURED_REAL_ENSTAB"
+}

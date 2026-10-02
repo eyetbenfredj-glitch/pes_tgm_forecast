@@ -1,0 +1,10 @@
+# Render.com blueprint: deploys the API from the Dockerfile (free tier sleeps when idle).
+services:
+  - type: web
+    name: pestgm-pv-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATA_MODE
+        value: demo
