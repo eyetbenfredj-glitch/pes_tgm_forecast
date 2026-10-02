@@ -1,8 +1,7 @@
 """
-Streamlit dashboard (CDC continuation Phase 16/17). 10 pages + interactive
-Tunisia map. Every page shows a REAL DATA / DEMO-SYNTHETIC DATA banner driven
-by DATA_MODE and the dataset's own provenance columns - never silently
-presented as validated real-world output.
+Streamlit dashboard for the PESTGM 7.0 Track 1 platform: 12 pages plus an
+interactive Tunisia map. A banner on each page states whether the data is
+simulated or measured.
 
 Run:
     streamlit run src/dashboard/app.py
@@ -63,20 +62,34 @@ def _real_predict():
     return real_service
 
 
-def provenance_banner(df: pd.DataFrame):
+_FRIENDLY = {
+    "SYNTHETIC_CLEARSKY": "synthetic clear-sky weather",
+    "DEMO_PROXY_PHYSICS_SIMULATION": "simulated production",
+}
+REAL_PAGES = ("11.", "12.")
+
+
+def provenance_banner(df: pd.DataFrame, page: str = ""):
+    """One readable status line per page; technical details sit in a collapsed expander."""
+    if page.startswith(REAL_PAGES):
+        return  # these pages carry their own "measured data" banner
     mode = get_data_mode()
     weather_src = df["weather_source"].iloc[0] if "weather_source" in df.columns else "UNKNOWN"
     src_col = "production_source" if TARGET_COL == "pv_production_mw_reference" else "pv_production_source"
     prod_src = df[src_col].iloc[0] if src_col in df.columns else "UNKNOWN"
-    is_real = (mode == DataMode.REAL)
-    if is_real:
-        st.success("REAL DATA — DATA_MODE=real")
-    else:
-        st.warning(
-            f"DEMO / SYNTHETIC DATA — DATA_MODE=demo | weather_source={weather_src} | "
-            f"production_source={prod_src}. Not validated against real STEG production. "
-            f"See docs/REAL_PRODUCTION_DATA_SOURCES.md."
-        )
+    if mode == DataMode.REAL:
+        st.success("Real data mode.")
+        return
+    st.warning(
+        "**Demonstration data.** National production on this page is simulated and the weather is "
+        "synthetic, so it is not validated against real production. "
+        "Measured, validated results are on pages 11 and 12 (ENSTAB Borj Cedria)."
+    )
+    with st.expander("Data details"):
+        st.write(f"Data mode: **{mode.value}**")
+        st.write(f"Weather: **{_FRIENDLY.get(weather_src, weather_src)}** (`{weather_src}`)")
+        st.write(f"Production: **{_FRIENDLY.get(prod_src, prod_src)}** (`{prod_src}`)")
+        st.write("Sources are described in `docs/REAL_PRODUCTION_DATA_SOURCES.md`.")
 
 
 df = load_data()
@@ -90,7 +103,7 @@ page = st.sidebar.radio("Page", [
     "11. REAL validation (ENSTAB measured)", "12. Live forecast (real model replay)",
 ])
 
-provenance_banner(df)
+provenance_banner(df, page)
 
 # ---------------------------------------------------------------- Page 1 --
 if page == "1. National overview":
@@ -99,14 +112,17 @@ if page == "1. National overview":
     national = levels["national"]
     col1, col2, col3 = st.columns(3)
     col1.metric("Total installed capacity (MW)", f"{df.drop_duplicates('district_id')['capacity_mw'].sum():.1f}")
-    col2.metric("Peak national forecast (MW, DEMO)", f"{national[TARGET_COL].max():.1f}")
+    col2.metric("Peak national forecast (MW)", f"{national[TARGET_COL].max():.1f}")
     col3.metric("Districts", df["district_id"].nunique())
     national = national.merge(reconcile_all_levels(df, NH.FCOL)["national"], on="timestamp")
     fig = px.line(national, x="timestamp", y=[NH.FCOL, TARGET_COL],
-                  title="National PV: ENSTAB-calibrated physics forecast vs simulated reference (DEMO)")
+                  title="National PV production: forecast vs simulated reference")
     st.plotly_chart(fig, width="stretch")
     consistency = check_consistency(levels, TARGET_COL)
-    st.caption(f"Hierarchical consistency: {consistency}")
+    if consistency.get("governorate_consistent") and consistency.get("national_consistent"):
+        st.caption("Aggregation check passed: district totals add up exactly to governorate and national totals.")
+    else:
+        st.warning("Aggregation check failed: district totals do not match governorate or national totals.")
 
 # ---------------------------------------------------------------- Page 2 --
 elif page == "2. Governorate overview":
@@ -133,9 +149,9 @@ elif page == "3. District forecast":
 # ---------------------------------------------------------------- Page 4 --
 elif page == "4. Uncertainty":
     st.header("Uncertainty (P10-P50-P90)")
-    st.caption("P50 = ENSTAB-calibrated physics forecast. Band = interval TRANSFERRED from the ENSTAB "
-               "conformal-calibrated J+1 ratios (single site, conservative for aggregates). "
-               "True per-horizon coverage on measured data: page 11.")
+    st.caption("The line is the physics forecast. The shaded band (P10 to P90) reuses the error profile measured "
+               "on the real ENSTAB system for the chosen horizon. It comes from a single site, so it is conservative "
+               "for regional or national totals. Measured coverage by horizon is on page 11.")
     district = st.selectbox("District", sorted(df["district"].unique()), key="unc_district")
     horizon = st.selectbox("Horizon whose error profile to transfer", ["15min", "1h", "3h", "6h", "J+1", "J+2", "J+3"], index=4)
     g = df[df["district"] == district].sort_values("timestamp").tail(200).copy()
@@ -149,10 +165,9 @@ elif page == "4. Uncertainty":
 
 # ---------------------------------------------------------------- Page 5 --
 elif page == "5. Forecast vs observed":
-    st.header("Forecast vs simulated reference (demo) - real measured comparison: page 11")
-    st.caption("No real observed production exists yet (see docs/REAL_PRODUCTION_DATA_SOURCES.md). "
-               "This page compares the persistence baseline forecast against the DEMO_PROXY target "
-               "to demonstrate the intended real-vs-forecast comparison view.")
+    st.header("Forecast vs reference")
+    st.caption("There is no measured national production to compare against, so the reference here is simulated. "
+               "The chart shows the physics forecast and a persistence baseline (previous value) next to it.")
     district = st.selectbox("District", sorted(df["district"].unique()), key="fvo_district")
     g = df[df["district"] == district].sort_values("timestamp").copy()
     g["persistence_forecast"] = g[TARGET_COL].shift(1)
@@ -163,13 +178,23 @@ elif page == "5. Forecast vs observed":
 
 # ---------------------------------------------------------------- Page 6 --
 elif page == "6. Forecast errors":
-    st.header("Forecast errors (persistence baseline, DEMO_ONLY)")
+    st.header("Forecast errors")
     district = st.selectbox("District", sorted(df["district"].unique()), key="err_district")
     g = df[df["district"] == district].sort_values("timestamp").copy()
     g["persistence_forecast"] = g[TARGET_COL].shift(1)
     g = g.dropna(subset=["persistence_forecast"])
     m = evaluate(g[TARGET_COL], g["persistence_forecast"], g["capacity_mw"])
-    st.json(m)
+    _z = lambda v: 0.0 if abs(v) < 5e-4 else v      # avoid printing -0.000
+    r1 = st.columns(3)
+    r1[0].metric("MAE (MW)", f"{m['MAE_MW']:.2f}")
+    r1[1].metric("RMSE (MW)", f"{m['RMSE_MW']:.2f}")
+    r1[2].metric("Bias (MW)", f"{_z(m['bias_MW']):+.3f}")
+    r2 = st.columns(3)
+    r2[0].metric("nMAE (% of capacity)", f"{m['nMAE_pct_of_capacity']:.2f}%")
+    r2[1].metric("nRMSE (% of capacity)", f"{m['nRMSE_pct_of_capacity']:.2f}%")
+    r2[2].metric("sMAPE", f"{m['sMAPE_pct']:.1f}%")
+    st.caption(f"Persistence baseline (forecast = previous 15-minute value) on simulated data, {m['n']:,} timesteps. "
+               "sMAPE is inflated by near-zero production at dawn and dusk; use nMAE for comparison.")
     g["error"] = g["persistence_forecast"] - g[TARGET_COL]
     fig = px.histogram(g, x="error", title="Error distribution (MW)")
     st.plotly_chart(fig, width="stretch")
@@ -188,9 +213,14 @@ elif page == "8. Monitoring / anomalies":
     st.header("Monitoring / anomalies")
     ref_end = df["timestamp"].quantile(0.5)
     st.subheader("Weather drift (PSI)")
-    st.dataframe(weather_drift_report(df, ref_end))
+    st.dataframe(weather_drift_report(df, ref_end), hide_index=True)
     st.subheader("Production drift (PSI)")
-    st.json(production_drift_report(df, TARGET_COL, ref_end))
+    pdr = production_drift_report(df, TARGET_COL, ref_end)
+    d1, d2 = st.columns(2)
+    d1.metric("Population Stability Index (PSI)", f"{pdr['psi']:.4f}")
+    d2.metric("Status", str(pdr["status"]).capitalize())
+    st.caption("PSI compares the second half of the period with the first half. "
+               "Below 0.10 is stable, 0.10 to 0.25 a moderate shift, above 0.25 a significant shift.")
     st.subheader("Physical anomaly flags")
     flags = anomaly_flags(df, production_col=TARGET_COL)
     pct = 100 * flags["physical_anomaly_flag"].mean()
@@ -207,18 +237,18 @@ elif page == "9. Model / explainability":
                      title="Global feature importance (SHAP, LightGBM)")
         st.plotly_chart(fig, width="stretch")
     else:
-        st.info("Run `python -c \"...\"` (see README) or the explainability module to generate "
-                "reports/explainability/global_feature_importance.csv first.")
-    st.caption("Model trained on DEMO_PROXY_PHYSICS_SIMULATION - see reports/MODEL_VALIDATION_REPORT.md")
+        st.info("The feature-importance file is not available yet. Generate it with the explainability module.")
+    st.caption("This importance is for the demonstration model trained on simulated production. "
+               "For the model trained on measured data, see `reports/figures/fig4_shap.png`.")
 
 # --------------------------------------------------------------- Page 10 --
 elif page == "10. Data provenance / status":
     st.header("Data provenance / status")
-    st.write(f"DATA_MODE: **{get_data_mode().value}**")
+    st.write(f"Data mode: **{get_data_mode().value}**")
     prov = df[["weather_source", "pv_production_source", "capacity_source"]].drop_duplicates()
     st.dataframe(prov)
-    st.markdown("See `docs/DATA_READINESS_REPORT.md` and `docs/REAL_PRODUCTION_DATA_SOURCES.md` "
-                "for the full real/derived/model-output/demo-only classification.")
+    st.markdown("Full classification of each dataset (real, derived, model output, demonstration only): "
+                "`docs/DATA_READINESS_REPORT.md` and `docs/REAL_PRODUCTION_DATA_SOURCES.md`.")
 
 # ------------------------------------------------------------------ Map --
 elif page == "Tunisia map":
